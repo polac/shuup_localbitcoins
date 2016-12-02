@@ -1,7 +1,7 @@
 Localbitcoins Merchant integration
 ==================================
 
-With this Shuup addon you can start accepting bitcoins in your 
+With this [Shuup](https://github.com/shuup/shuup) addon you can start accepting bitcoins in your 
 e-commers store.
 
 Howto install
