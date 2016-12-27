@@ -12,9 +12,8 @@ from django.db.backends.utils import format_number
 from django.http.response import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
 from shuup.core.models import PaymentProcessor, ServiceChoice
-from shuup.utils.http import retry_request
 
-from shuup_localbitcoins import LBTC_ADDRESS
+from lbcapi import api
 
 acceptable_states_in_zero_conf = ('PAID', 'PAID_IN_LATE', 'PAID_AND_CONFIRMED', 'PAID_IN_LATE_AND_CONFIRMED')
 
@@ -46,7 +45,8 @@ class LocalbitcoinsCheckoutPaymentProcessor(PaymentProcessor):
             pass
 
     def _update_payment_data(self, invoice_id, order):
-        response = self.make_request("/api/merchant/invoice/{invoice_id}/".format(invoice_id=invoice_id), '', "get")
+        url = "/api/merchant/invoice/{invoice_id}/".format(invoice_id=invoice_id)
+        response = self.get_api_conn().call('GET', url).json()['data']
         order.payment_data["localbitcoins"] = response['invoice']
 
     def get_payment_process_response(self, service, order, urls):
@@ -64,7 +64,7 @@ class LocalbitcoinsCheckoutPaymentProcessor(PaymentProcessor):
                 id=order.identifier, shop=order.shop),
                 'return_url': urls.return_url,
             }
-            response = self.make_request("/api/merchant/new_invoice/", invoice_data, "post")
+            response = self.get_api_conn().call('POST', "/api/merchant/new_invoice/", params=invoice_data,).json()['data']
             order.payment_data["localbitcoins"] = response['invoice']
             order.save()
             return HttpResponseRedirect(order.payment_data["localbitcoins"]["url"])
@@ -73,32 +73,7 @@ class LocalbitcoinsCheckoutPaymentProcessor(PaymentProcessor):
             # If not paid redirect to make payment.
             pass
 
-    def make_request(self, endpoint, params, method):
-
-        params_encoded = ''
-        if params != '':
-            params_encoded = urllib.urlencode(params)
-            if method == 'get':
-                params_encoded = '?' + params_encoded
-
-        now = datetime.datetime.utcnow()
-        epoch = datetime.datetime.utcfromtimestamp(0)
-        delta = now - epoch
-        nonce = int(delta.total_seconds() * 1000)
-
-        message = str(nonce) + self.api_key + endpoint + params_encoded
-        signature = hmac.new(self.api_secret.encode('utf-8'), msg=message.encode('utf-8'), digestmod=hashlib.sha256).hexdigest().upper()
-
-        headers = {}
-        headers['Apiauth-key'] = self.api_key
-        headers['Apiauth-Nonce'] = str(nonce)
-        headers['Apiauth-Signature'] = signature
-
-        response = retry_request(
-            method=method,
-            url=LBTC_ADDRESS + endpoint,
-            data=params,
-            headers=headers
-        )
-
-        return response.json()['data']
+    def get_api_conn(self):
+        if not hasattr(self, '_conn') or not self._conn:
+            self._conn = api.hmac(self.api_key, self.api_secret)
+        return self._conn
