@@ -11,11 +11,9 @@ Clone this repo and make the package
 
     git clone https://github.com/polac/shuup_localbitcoins.git
     cd shuup_localbitcoins
-    python setup.py sdist --formats=zip
+    python setup.py bdist_wheel
     
-Install the package
-
-    pip install dist/shuup-localbitcoins-*.zip
+Install the package using the Shuup admin pages
 
 License
 -------

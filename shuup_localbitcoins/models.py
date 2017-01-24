@@ -1,10 +1,5 @@
 from __future__ import unicode_literals
 
-import hashlib
-import hmac
-import urllib
-
-import datetime
 from decimal import Decimal
 
 from django.db import models

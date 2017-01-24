@@ -2,7 +2,8 @@
 from django import forms
 
 from shuup.admin.forms import ShuupAdminForm
-from shuup.admin.modules.service_providers.forms import ServiceWizardForm, ServiceWizardFormDef
+from shuup.admin.modules.service_providers.wizard_form_defs import ServiceWizardFormDef
+from shuup.admin.modules.service_providers.wizard_forms import ServiceWizardForm
 
 from shuup_localbitcoins.models import LocalbitcoinsCheckoutPaymentProcessor
 
